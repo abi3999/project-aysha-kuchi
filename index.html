@@ -1,1 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" 
+          content="width=device-width, 
+                  initial-scale=1.0,
+                  maximum-scale=1.0,
+                  user-scalable=no">
+    <title>Movable Knife</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
+    <style>
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: black;
+        margin: 0;
+        position: relative;
+        overflow: hidden;
+      }
+      #fixedBox {
+        height: 70px;
+        width: 70px;
+        background: #f20044;
+        position: relative;
+        transform: rotate(-45deg);
+        box-shadow: -10px 10px 90px #f20044;
+        animation: heartbeat 1.5s infinite;
+      }
+      @keyframes heartbeat {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+      }
+      #fixedBox:before {
+        content: "";
+        position: absolute;
+        height: 70px;
+        width: 70px;
+        background: #f20044;
+        top: -50%;
+        border-radius: 50px;
+        box-shadow: -10px -10px 90px #f20044;
+      }
+      #fixedBox:after {
+        content: "";
+        position: absolute;
+        height: 70px;
+        width: 70px;
+        background: #f20044;
+        right: -50%;
+        border-radius: 50px;
+        box-shadow: 10px 10px 90px #f20044;
+      }
+      #movableBox {
+        position: absolute;
+        left: 10%;
+        top: 10%;
+        cursor: grab;
+        width: 3vw;
+        height: 20vh;
+        background: linear-gradient(
+          to bottom,
+          silver 0%,
+          silver 50%,
+          #8b4513 50%,
+          #8b4513 100%
+        );
+        border-radius: 5px;
+        box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+        touch-action: none;
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+      #blade {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 50%;
+        background: linear-gradient(
+          to bottom,
+          #d81919 0%,
+          hsl(0, 59%, 36%) 50%,
+          #fffdfd 100%
+        );
+        border-top-left-radius: 5px;
+        border-top-right-radius: 5px;
+      }
+      #handle {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 50%;
+        background: #8b4513;
+        border-bottom-left-radius: 5px;
+        border-bottom-right-radius: 5px;
+        box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+      }
+      .blood {
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        background-color: red;
+        border-radius: 50%;
+        animation: bloodAnimation 0.5s ease-out forwards;
+        opacity: 0;
+      }
+      @keyframes bloodAnimation {
+        0% { opacity: 1; transform: scale(1); }
+        100% { opacity: 0; transform: scale(3); }
+      }
+      #instructions {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: "Tiny5", sans-serif;
+        font-size: 5vw;
+        color: white;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="fixedBox"></div>
+    <div id="movableBox">
+      <div id="blade"></div>
+      <div id="handle"></div>
+    </div>
+    <div id="instructions">enter the heart by cutting it...</div>
+    <script>
+      const movableBox = document.getElementById("movableBox");
+      const fixedBox = document.getElementById("fixedBox");
+      let offsetX, offsetY;
 
+      function startDrag(e) {
+        e.preventDefault();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        offsetX = clientX - movableBox.getBoundingClientRect().left;
+        offsetY = clientY - movableBox.getBoundingClientRect().top;
+
+        document.addEventListener(e.touches ? "touchmove" : "mousemove", move);
+        document.addEventListener(e.touches ? "touchend" : "mouseup", stopDrag);
+      }
+
+      function move(e) {
+        e.preventDefault();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        movableBox.style.left = `${clientX - offsetX + window.pageXOffset}px`;
+        movableBox.style.top = `${clientY - offsetY + window.pageYOffset}px`;
+
+        if (isTouching(fixedBox, movableBox)) {
+          const blood = document.createElement("div");
+          blood.classList.add("blood");
+          blood.style.left = `${clientX - 15}px`;
+          blood.style.top = `${clientY - 15}px`;
+          document.body.appendChild(blood);
+
+          setTimeout(() => {
+            blood.remove();
+            window.location.href = "heart.html";
+          }, 500);
+        }
+      }
+
+      function stopDrag(e) {
+        document.removeEventListener(e.touches ? "touchmove" : "mousemove", move);
+        document.removeEventListener(e.touches ? "touchend" : "mouseup", stopDrag);
+      }
+
+      function isTouching(div1, div2) {
+        const rect1 = div1.getBoundingClientRect();
+        const rect2 = div2.getBoundingClientRect();
+        return !(rect1.right < rect2.left || 
+                rect1.left > rect2.right || 
+                rect1.bottom < rect2.top || 
+                rect1.top > rect2.bottom);
+      }
+
+      movableBox.addEventListener("mousedown", startDrag);
+      movableBox.addEventListener("touchstart", startDrag);
+    </script>
+  </body>
+</html>
